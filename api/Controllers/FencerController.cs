@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using api.Models;
+using api.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 
@@ -8,67 +9,29 @@ namespace api.Controllers;
 [ApiController]
 public class FencerController : ControllerBase
 {
-    private readonly ILogger<RosterController> _logger;
-    private SqliteConnection DB_CONNECTION; 
+    private FencerRepository repo;
     
-    public FencerController(ILogger<RosterController> logger)
+    public FencerController()
     {
-        _logger = logger;
-        DB_CONNECTION = new SqliteConnection("Data source=ghsfl_dev.db");
-        DB_CONNECTION.Open();
+        repo = new FencerRepository();
     }
 
     [HttpGet]
     [Route("api/fencer")]
-    public IActionResult Get(string first, string last)
+    public IActionResult Get(string first, string last, string school)
     {
         if (!Request.Headers.ContainsKey("Authorization"))
             return Unauthorized();
-
+        
+        // just testing, no real auth as of yet
         var handler = new JwtSecurityTokenHandler();
         JwtSecurityToken jwt = handler.ReadJwtToken(Request.Headers["Authorization"]);
+
+        List<Fencer> result = repo.GetFencersFromDB(first, last, school);
+
+        if (result.Count == 0)
+            return NotFound();
         
-        var f = new Fencer
-        {
-            FirstName = "Jimmy",
-            LastName = "Wallace",
-            School = "Fellowship",
-            TournamentsAttended = 7
-        };
-        return Ok(f);
-    }
-
-    private List<Fencer> GetFencerFromDb(string firstname, string lastname, string school)
-    {
-        List<Fencer> fencers = new List<Fencer>();
-        var command = DB_CONNECTION.CreateCommand();
-        command.CommandText =
-            @"
-                SELECT
-                    tournaments_attended
-                FROM
-                    Fencers
-                WHERE
-                    firstname = @first and 
-                    lastname = @last and
-                    school = @school
-            ";
-        command.Parameters.AddWithValue("first", firstname);
-        command.Parameters.AddWithValue("last", lastname);
-        command.Parameters.AddWithValue("school", school);
-
-        var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            fencers.Add(new Fencer
-            {
-                FirstName = lastname,
-                LastName = firstname,
-                School = school,
-                TournamentsAttended = reader.GetInt32(0)
-            });
-        }
-
-        return fencers;
+        return Ok(result);
     }
 }
