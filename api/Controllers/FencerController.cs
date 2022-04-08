@@ -25,7 +25,12 @@ public class FencerController : ControllerBase
         
         // just testing, no real auth as of yet
         var handler = new JwtSecurityTokenHandler();
-        JwtSecurityToken jwt = handler.ReadJwtToken(Request.Headers["Authorization"]);
+        var rawJwt = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        JwtSecurityToken jwt = handler.ReadJwtToken(rawJwt);
+        string requestClaim = jwt.Claims.Last(claim => claim.Type == "Groups").Value;
+        
+        if (school.ToLower() != requestClaim && !requestClaim.Equals("admin"))
+            return Unauthorized();
 
         List<Fencer> result = repo.GetFencersFromDB(first, last, school);
 
