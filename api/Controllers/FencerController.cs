@@ -2,7 +2,6 @@ using System.IdentityModel.Tokens.Jwt;
 using api.Models;
 using api.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite;
 
 namespace api.Controllers;
 
@@ -23,7 +22,6 @@ public class FencerController : ControllerBase
         if (!Request.Headers.ContainsKey("Authorization"))
             return Unauthorized();
         
-        // just testing, no real auth as of yet
         var handler = new JwtSecurityTokenHandler();
         var rawJwt = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
         JwtSecurityToken jwt = handler.ReadJwtToken(rawJwt);
