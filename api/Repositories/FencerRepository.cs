@@ -12,7 +12,14 @@ public class FencerRepository
         DbConnection = new SqliteConnection("Data source=ghsfl_dev.db");
         DbConnection.Open();    
     }
-
+    
+    /// <summary>
+    /// gets a list of fencers from the database that match the given parameters
+    /// </summary>
+    /// <param name="firstname">the firstname to search for</param>
+    /// <param name="lastname">the lastname to search for</param>
+    /// <param name="school">the school to search for</param>
+    /// <returns></returns>
     public List<Fencer> GetFencersFromDB(string firstname, string lastname, string school)
     {
         List<Fencer> fencers = new List<Fencer>();
@@ -29,7 +36,6 @@ public class FencerRepository
                     lastname = @last COLLATE NOCASE
                   and
                     school = @school COLLATE NOCASE
-                
             ";
         command.Parameters.AddWithValue("first", firstname);
         command.Parameters.AddWithValue("last", lastname);
