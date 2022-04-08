@@ -22,7 +22,13 @@ public class RosterRepository
         public List<Fencer> NewFencers { get; set; }
     }
     
-    public async Task<bool> AddRoundForSchool(string school, int round)
+    /// <summary>
+    /// adds a round to a school in the database
+    /// </summary>
+    /// <param name="school">the school to add a round to</param>
+    /// <param name="round">the round to add to the school</param>
+    /// <returns>true if no exceptions were encountered, false if there were</returns>
+    private async Task<bool> AddRoundForSchool(string school, int round)
     {
         var command = DbConnection.CreateCommand();
         command.CommandText =
@@ -47,6 +53,12 @@ public class RosterRepository
         return true;
     }
     
+    /// <summary>
+    /// checks if a school has submitted roster(s) for a specific round
+    /// </summary>
+    /// <param name="school">the school to check</param>
+    /// <param name="round">the round to check</param>
+    /// <returns>true if they have, false if they haven't</returns>
     public async Task<bool> SchoolHasSubmittedForRound(string school, int round)
     {
         var command = DbConnection.CreateCommand();
@@ -67,6 +79,12 @@ public class RosterRepository
         return await command.ExecuteScalarAsync() != null;
     }
     
+    /// <summary>
+    /// removes all fencers for a specific school for a specific round
+    /// </summary>
+    /// <param name="school">the school to remove from</param>
+    /// <param name="round">the round to remove from</param>
+    /// <returns>the number of fencers removed</returns>
     public async Task<int> RemoveFencersForRound(string school, int round)
     {
         var command = DbConnection.CreateCommand();
@@ -90,6 +108,12 @@ public class RosterRepository
         return await command.ExecuteNonQueryAsync();
     } 
     
+    /// <summary>
+    /// adds to the FencerRounds table
+    /// </summary>
+    /// <param name="id">id of the fencer to add</param>
+    /// <param name="round">round to add</param>
+    /// <returns>true if no exceptions were encountered, false if there were</returns>
     public async Task<bool> AddFencerRound(int id, int round)
     {
         var command = DbConnection.CreateCommand();
@@ -150,7 +174,15 @@ public class RosterRepository
             TournamentsAttended = 0
         };
     }
-
+    
+    /// <summary>
+    /// check if a fencer already exists in the database
+    /// </summary>
+    /// <param name="firstname">the firstname to check</param>
+    /// <param name="lastname">the lastname to check</param>
+    /// <param name="school">the school to check</param>
+    /// <returns>the id of the fencer, if there is one</returns>
+    /// TODO check to see what happens if the fencer does not exist
     public async Task<int> CheckFencerExists(string firstname, string lastname, string school)
     {
         var command = DbConnection.CreateCommand();
@@ -197,6 +229,14 @@ public class RosterRepository
         return await command.ExecuteScalarAsync() != null;
     }
     
+    /// <summary>
+    /// reads data from the submitted roster file
+    /// </summary>
+    /// <param name="filename">the name of the roster to read</param>
+    /// <param name="school">the school the roster was submitted for</param>
+    /// <param name="gender">the gender the roster was submitted for</param>
+    /// <param name="round">the round the roster was submitted for</param>
+    /// <returns>a list of fencer objects representing fencers that were not already in the database</returns>
     public async Task<List<Fencer>> ReadRosterFile(string filename, string school, string gender, int round)
     {
         List<Fencer> result = new List<Fencer>();
@@ -225,7 +265,13 @@ public class RosterRepository
 
         return result;
     }
-
+    
+    /// <summary>
+    /// updates a school's roster for a specific round in the database
+    /// </summary>
+    /// <param name="school">the school to update</param>
+    /// <param name="round">the round to update</param>
+    /// <returns>true if there were no exceptions, false if not</returns>
     private async Task<bool> UpdateSchoolRound(string school, int round)
     {
         if (await SchoolHasSubmittedForRound(school, round))
@@ -235,7 +281,15 @@ public class RosterRepository
 
         return await AddRoundForSchool(school, round);
     }
-
+    
+    /// <summary>
+    /// reads the submitted roster(s) and writes to the local storage
+    /// also ensures that they are properly named
+    /// </summary>
+    /// <param name="school">the school the roster(s) are submitted for</param>
+    /// <param name="files">the list of files that were uploaded</param>
+    /// <returns>a PostResponse object that contains whether or not the action was a success, a message, and a list of
+    /// fencers that were not already in the database</returns>
     public async Task<PostResponse> ReadSubmittedFiles(string school, IFormFileCollection files)
     {
         PostResponse pr = new PostResponse();
