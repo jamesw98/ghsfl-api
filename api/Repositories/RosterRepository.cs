@@ -153,9 +153,9 @@ public class RosterRepository
         command.CommandText = 
             @"
                 INSERT INTO Fencers
-                    (firstname, lastname, school, gender, tournaments_attended)                
+                    (firstname, lastname, school, gender, tournaments_attended, points)                
                 VALUES
-                    (@firstname, @lastname, @school, @gender, 0);
+                    (@firstname, @lastname, @school, @gender, 0, 0);
                 SELECT last_insert_rowid();
             ";
         command.Parameters.AddWithValue("firstname", firstname);
