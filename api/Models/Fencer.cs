@@ -7,4 +7,5 @@ public class Fencer
     public string School { get; set; }
     public string Gender { get; set; }
     public int TournamentsAttended { get; set; }
+    public int Points { get; set; }
 }
