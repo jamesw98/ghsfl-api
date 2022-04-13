@@ -18,33 +18,20 @@ public class SchoolController : ControllerBase
     }
 
     [HttpGet]
-    [Route("api/school/fencers")]
-    // [Authorize]
-    public async Task<IActionResult> GetFencers()
+    [Authorize]
+    [Route("api/{school}/fencers/{round}")]
+    public async Task<IActionResult> GetFencers(string school, int round)
     {
-        // if (!Request.Headers.ContainsKey("Authorization"))
-        //     return Unauthorized();
+        string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
+        if (!school.ToLower().Equals(schoolClaim.ToLower()))
+            return Unauthorized();
 
-        var handler = new JwtSecurityTokenHandler();
-        var rawJwt = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        JwtSecurityToken jwt = handler.ReadJwtToken(rawJwt);
-        string schoolName = jwt.Claims.Last(claim => claim.Type == "Groups").Value;
-        
-        var temp = HttpContext.User.Identities.First().Claims.Single();
-
-        List<Fencer> result = await repo.GetFencersForSchool(schoolName);
+        List<Fencer> result = await repo.GetFencersForSchoolForRound(schoolClaim, round);
         
         if (result.Count == 0)
-            return NotFound($"No fencers were found for: {schoolName}");
+            return NotFound($"No fencers were found for: {schoolClaim}");
         
         return Ok(result);
     }
-
-    // [HttpGet]
-    // [Route("api/school/rosters")]
-    // public async Task<IActionResult> GetRosters()
-    // {
-    //     
-    // }
 }
 
