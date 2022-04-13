@@ -27,19 +27,23 @@ public class RosterRepository
     /// </summary>
     /// <param name="school">the school to add a round to</param>
     /// <param name="round">the round to add to the school</param>
+    /// <param name="gender">the gender of the fencers in this roster</param>
     /// <returns>true if no exceptions were encountered, false if there were</returns>
-    private async Task<bool> AddRoundForSchool(string school, int round)
+    private async Task<bool> AddRoundForSchool(string school, int round, char gender)
     {
         var command = DbConnection.CreateCommand();
+        string genderColumn = gender is 'f' or 'F' ? "Female" : "Male";
+        
         command.CommandText =
-            @"
+            @$"
                 INSERT INTO SchoolRounds
-                    (school, round)
+                    (school, round, {genderColumn})
                 VALUES
-                    (@school, @round)
+                    (@school, @round, @genderVal)
             ";
         command.Parameters.AddWithValue("school", school);
         command.Parameters.AddWithValue("round", round);
+        command.Parameters.AddWithValue("genderVal", true);
 
         try
         {
@@ -146,8 +150,8 @@ public class RosterRepository
     /// <param name="lastname">the lastname of the fencer</param>
     /// <param name="school">the school of the fencer</param>
     /// <param name="gender">the gender of the fencer</param>
-    /// <returns>the id of the newly created fencer, or -1 if the fencer already exists</returns>
-    public async Task<Fencer> CreateNewFencer(string firstname, string lastname, string school, string gender)
+    /// <returns>the id of the newly created fencer</returns>
+    public async Task<int> CreateNewFencer(string firstname, string lastname, string school, string gender)
     {
         var command = DbConnection.CreateCommand();
         command.CommandText = 
@@ -162,17 +166,8 @@ public class RosterRepository
         command.Parameters.AddWithValue("lastname", lastname);
         command.Parameters.AddWithValue("school", school);
         command.Parameters.AddWithValue("gender", gender);
-
-        await command.ExecuteNonQueryAsync();
         
-        return new Fencer
-        {
-            FirstName = firstname,
-            LastName = lastname,
-            School = school,
-            Gender = gender,
-            TournamentsAttended = 0
-        };
+        return Convert.ToInt32(await command.ExecuteScalarAsync());
     }
     
     /// <summary>
@@ -254,9 +249,14 @@ public class RosterRepository
 
                 int fencerId = await CheckFencerExists(last, first, school); 
                 
-                if (fencerId != -1) 
+                if (fencerId == 0)
                 {
-                    result.Add(await CreateNewFencer(last, first, school, gender));
+                    fencerId = await CreateNewFencer(last, first, school, gender);
+                    result.Add(new Fencer
+                    {
+                        FirstName = first, 
+                        LastName = last
+                    });
                 }
 
                 await AddFencerRound(fencerId, round);
@@ -272,14 +272,14 @@ public class RosterRepository
     /// <param name="school">the school to update</param>
     /// <param name="round">the round to update</param>
     /// <returns>true if there were no exceptions, false if not</returns>
-    private async Task<bool> UpdateSchoolRound(string school, int round)
+    private async Task<bool> UpdateSchoolRound(string school, int round, char gender)
     {
         if (await SchoolHasSubmittedForRound(school, round))
         {
             await RemoveFencersForRound(school, round);
         }
 
-        return await AddRoundForSchool(school, round);
+        return await AddRoundForSchool(school, round, gender);
     }
     
     /// <summary>
@@ -308,7 +308,7 @@ public class RosterRepository
             }
             
             int round = Convert.ToInt32(matches.Groups[1].Value);
-            string gender = matches.Groups[3].Value.ToLower().Substring(0,1);
+            char gender = matches.Groups[3].Value.ToLower()[0];
 
             if (!await CheckSchoolExists(school))
             {
@@ -323,9 +323,14 @@ public class RosterRepository
                 await f.CopyToAsync(fs);
             }
 
-            await UpdateSchoolRound(school, round);
+            if (!await UpdateSchoolRound(school, round, gender))
+            {
+                pr.Message = $"Error";
+                pr.Success = false;
+                return pr;
+            }
 
-            pr.NewFencers = await ReadRosterFile(f.FileName, school, gender, round);
+            pr.NewFencers = await ReadRosterFile(f.FileName, school, gender.ToString(), round);
         }
 
         pr.Message = "Success!";
