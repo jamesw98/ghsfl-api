@@ -23,8 +23,6 @@ public class FencerRepository
     /// <returns></returns>
     public async Task<List<Fencer>> GetFencersFromDB(string firstname, string lastname, string school)
     {
-        var command = DbConnection.CreateCommand();
-
          return (await DbConnection.QueryAsync<Fencer>(@"
                 SELECT
                     firstname, lastname, school, tournaments_attended
