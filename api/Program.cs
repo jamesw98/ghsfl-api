@@ -21,7 +21,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             options.RequireHttpsMetadata = false;
         });
 
-// builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
