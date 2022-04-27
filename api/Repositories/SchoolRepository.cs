@@ -38,40 +38,19 @@ public class SchoolRepository
     /// <returns>a list of fencers</returns>
     public async Task<List<Fencer>> GetFencersForSchool(string schoolName)
     {
-        List<Fencer> fencers = new List<Fencer>();
-        
-        var command = DbConnection.CreateCommand();
-        command.CommandText =
+        return (await DbConnection.QueryAsync<Fencer>(
             @"
-                SELECT
-                    firstname, 
-                    lastname, 
-                    tournaments_attended,
-                    points,
-                    gender,
-                    school
-                FROM
-                    Fencers
-                WHERE 
-                    school = @school COLLATE NOCASE
-            ";
-        command.Parameters.AddWithValue("school", schoolName);
-
-        var reader = await command.ExecuteReaderAsync();
-
-        while (reader.Read())
-        {
-            fencers.Add(new Fencer()
-            {
-                FirstName = reader.GetString(0),
-                LastName = reader.GetString(1),
-                TournamentsAttended = reader.GetInt32(2),
-                Points = reader.GetInt32(3),
-                Gender = reader.GetString(4)[0] == 'F' ? "Female" : "Male",
-                School = reader.GetString(5)
-            });
-        }
-
-        return fencers;
+                    SELECT
+                        firstname, 
+                        lastname, 
+                        tournaments_attended,
+                        points,
+                        gender,
+                        school
+                    FROM
+                        Fencers
+                    WHERE 
+                        school = @School COLLATE NOCASE
+                ", new {School = schoolName})).ToList();
     } 
 }
