@@ -29,37 +29,7 @@ public class SchoolRepository
                     fr.round = @Round AND 
                     f.school = @School COLLATE NOCASE
             ", new {Round = round, School = schoolName})).ToList();
-    
-        // var command = DbConnection.CreateCommand();
-        // command.CommandText =
-        //     @"
-        //         SELECT 
-        //             f.firstname,
-        //             f.lastname,
-        //             f.gender
-        //         FROM FencerRounds fr
-        //             INNER JOIN Fencers f ON fr.fencer_id = f.id
-        //         WHERE
-        //             fr.round = @round AND 
-        //             f.school = @school COLLATE NOCASE
-        //     ";
-        // command.Parameters.AddWithValue("round", round);
-        // command.Parameters.AddWithValue("school", schoolName);
-        //
-        // var reader = await command.ExecuteReaderAsync();
-        //
-        // while (reader.Read())
-        // {
-        //     fencers.Add(new Fencer
-        //     {
-        //         FirstName = reader.GetString(0),
-        //         LastName = reader.GetString(1),
-        //         Gender = reader.GetString(2)[0] == 'F' ? "Female" : "Male"
-        //     });    
-        // }
-        //
-        // return fencers;
-    }
+        }
     
     /// <summary>
     /// returns all fencers that have been submitted in a roster for the given school
