@@ -1,4 +1,5 @@
 using api.Models;
+using Dapper;
 using Microsoft.Data.Sqlite;
 
 namespace api.Repositories;
@@ -15,37 +16,49 @@ public class SchoolRepository
 
     public async Task<List<Fencer>> GetFencersForSchoolForRound(string schoolName, int round)
     {
-        List<Fencer> fencers = new List<Fencer>();
-    
-        var command = DbConnection.CreateCommand();
-        command.CommandText =
+        return (await DbConnection.QueryAsync<Fencer>(
             @"
                 SELECT 
                     f.firstname,
                     f.lastname,
+                    f.school,
                     f.gender
                 FROM FencerRounds fr
                     INNER JOIN Fencers f ON fr.fencer_id = f.id
                 WHERE
-                    fr.round = @round AND 
-                    f.school = @school COLLATE NOCASE
-            ";
-        command.Parameters.AddWithValue("round", round);
-        command.Parameters.AddWithValue("school", schoolName);
-        
-        var reader = await command.ExecuteReaderAsync();
-        
-        while (reader.Read())
-        {
-            fencers.Add(new Fencer
-            {
-                FirstName = reader.GetString(0),
-                LastName = reader.GetString(1),
-                Gender = reader.GetString(2)[0] == 'F' ? "Female" : "Male"
-            });    
-        }
-
-        return fencers;
+                    fr.round = @Round AND 
+                    f.school = @School COLLATE NOCASE
+            ", new {Round = round, School = schoolName})).ToList();
+    
+        // var command = DbConnection.CreateCommand();
+        // command.CommandText =
+        //     @"
+        //         SELECT 
+        //             f.firstname,
+        //             f.lastname,
+        //             f.gender
+        //         FROM FencerRounds fr
+        //             INNER JOIN Fencers f ON fr.fencer_id = f.id
+        //         WHERE
+        //             fr.round = @round AND 
+        //             f.school = @school COLLATE NOCASE
+        //     ";
+        // command.Parameters.AddWithValue("round", round);
+        // command.Parameters.AddWithValue("school", schoolName);
+        //
+        // var reader = await command.ExecuteReaderAsync();
+        //
+        // while (reader.Read())
+        // {
+        //     fencers.Add(new Fencer
+        //     {
+        //         FirstName = reader.GetString(0),
+        //         LastName = reader.GetString(1),
+        //         Gender = reader.GetString(2)[0] == 'F' ? "Female" : "Male"
+        //     });    
+        // }
+        //
+        // return fencers;
     }
     
     /// <summary>
