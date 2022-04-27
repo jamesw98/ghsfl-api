@@ -13,7 +13,13 @@ public class SchoolRepository
         DbConnection = new SqliteConnection("Data source=ghsfl_dev.db");
         DbConnection.Open();
     }
-
+    
+    /// <summary>
+    /// returns all fencers for a specific school for a specific round
+    /// </summary>
+    /// <param name="schoolName">the name of the school to get the fencers for</param>
+    /// <param name="round">the round to get the fencers for</param>
+    /// <returns>a list of fencers</returns>
     public async Task<List<Fencer>> GetFencersForSchoolForRound(string schoolName, int round)
     {
         return (await DbConnection.QueryAsync<Fencer>(
