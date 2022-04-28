@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Mvc;
 using api.Models;
 using api.Repositories;
+using Microsoft.AspNetCore.Authorization;
 
 namespace api.Controllers;
 
@@ -29,22 +30,13 @@ public class RosterController : ControllerBase
     
     [HttpPost]
     [Route("api/roster")]
+    [Authorize]
     public async Task<IActionResult> Post()
     {
-        if (!Request.Headers.ContainsKey("Authorization"))
-            return Unauthorized();
+        string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
         
-        // yes, this is reused from FencerController
-        // just testing, no real auth as of yet
-        var handler = new JwtSecurityTokenHandler();
-        var rawJwt = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        JwtSecurityToken jwt = handler.ReadJwtToken(rawJwt);
-        string claimSchool = jwt.Claims.Last(claim => claim.Type == "Groups").Value;
+        RosterRepository.PostResponse result = await repo.ReadSubmittedFiles(schoolClaim, Request.Form.Files);
         
-        if (Request.Form.Files.Count < 1)
-            return BadRequest("No files attached");
-        
-        RosterRepository.PostResponse result = await repo.ReadSubmittedFiles(claimSchool, Request.Form.Files);
         if (result.Success) 
             return Ok(result);
         
