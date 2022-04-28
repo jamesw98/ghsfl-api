@@ -1,11 +1,12 @@
 using api.Models;
 using Microsoft.Data.Sqlite;
+using Dapper;
 
 namespace api.Repositories;
 
 public class FencerRepository
 {
-    private SqliteConnection DbConnection;
+    private readonly SqliteConnection DbConnection;
     
     public FencerRepository()
     {
@@ -20,39 +21,20 @@ public class FencerRepository
     /// <param name="lastname">the lastname to search for</param>
     /// <param name="school">the school to search for</param>
     /// <returns></returns>
-    public List<Fencer> GetFencersFromDB(string firstname, string lastname, string school)
+    public async Task<List<Fencer>> GetFencersFromDB(string firstname, string lastname, string school)
     {
-        List<Fencer> fencers = new List<Fencer>();
-        var command = DbConnection.CreateCommand();
-        command.CommandText =
-            @"
+         return (await DbConnection.QueryAsync<Fencer>(
+        @"
                 SELECT
                     firstname, lastname, school, tournaments_attended
                 FROM
                     Fencers
                 WHERE
-                    firstname = @first COLLATE NOCASE 
+                    firstname = @First COLLATE NOCASE 
                   and 
-                    lastname = @last COLLATE NOCASE
+                    lastname = @Last COLLATE NOCASE
                   and
-                    school = @school COLLATE NOCASE
-            ";
-        command.Parameters.AddWithValue("first", firstname);
-        command.Parameters.AddWithValue("last", lastname);
-        command.Parameters.AddWithValue("school", school);
-
-        var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            fencers.Add(new Fencer
-            {
-                FirstName = reader.GetString(0),
-                LastName = reader.GetString(1),
-                School = reader.GetString(2),
-                TournamentsAttended = reader.GetInt32(3)
-            });
-        }
-
-        return fencers;
+                    school = @School COLLATE NOCASE
+            ", new {First = firstname, Last = lastname, School = school})).ToList();
     }
 }

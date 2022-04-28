@@ -17,8 +17,9 @@ public class FencerController : ControllerBase
 
     [HttpGet]
     [Route("api/fencer")]
-    public IActionResult Get(string first, string last, string school)
+    public async Task<IActionResult> Get(string first, string last, string school)
     {
+        //TODO get rid of this old auth, switch to new auth
         if (!Request.Headers.ContainsKey("Authorization"))
             return Unauthorized();
         
@@ -30,7 +31,7 @@ public class FencerController : ControllerBase
         if (school.ToLower() != requestClaim && !requestClaim.Equals("admin"))
             return Unauthorized();
 
-        List<Fencer> result = repo.GetFencersFromDB(first, last, school);
+        List<Fencer> result = await repo.GetFencersFromDB(first, last, school);
 
         if (result.Count == 0)
             return NotFound();

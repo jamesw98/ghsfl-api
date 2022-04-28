@@ -20,10 +20,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             options.ClaimsIssuer = "https://dev-28211772.okta.com/oauth2/default";
             options.RequireHttpsMetadata = false;
         });
-    // .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme,
-    //     options => builder.Configuration.Bind("CookieSettings", options));
 
-// builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
