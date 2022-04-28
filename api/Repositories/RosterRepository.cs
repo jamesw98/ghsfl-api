@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
 using api.Models;
+using Dapper;
 
 namespace api.Repositories;
 
@@ -28,33 +29,17 @@ public class RosterRepository
     /// <param name="school">the school to add a round to</param>
     /// <param name="round">the round to add to the school</param>
     /// <param name="gender">the gender of the fencers in this roster</param>
-    /// <returns>true if no exceptions were encountered, false if there were</returns>
-    private async Task<bool> AddRoundForSchool(string school, int round, char gender)
+    private async Task AddRoundForSchool(string school, int round, char gender)
     {
-        var command = DbConnection.CreateCommand();
         string genderColumn = gender is 'f' or 'F' ? "Female" : "Male";
-        
-        command.CommandText =
+
+        await DbConnection.ExecuteAsync(
             @$"
-                INSERT INTO SchoolRounds
-                    (school, round, {genderColumn})
-                VALUES
-                    (@school, @round, @genderVal)
-            ";
-        command.Parameters.AddWithValue("school", school);
-        command.Parameters.AddWithValue("round", round);
-        command.Parameters.AddWithValue("genderVal", true);
-
-        try
-        {
-            await command.ExecuteNonQueryAsync();
-        }
-        catch (DbException e)
-        {
-            return false;
-        }
-
-        return true;
+                    INSERT INTO SchoolRounds
+                        (school, round, {genderColumn})
+                    VALUES
+                        (@School, @Round, @GenderVal)
+                ", new {School = school, Round = round, GenderVal = true});
     }
     
     /// <summary>
@@ -65,22 +50,16 @@ public class RosterRepository
     /// <returns>true if they have, false if they haven't</returns>
     public async Task<bool> SchoolHasSubmittedForRound(string school, int round)
     {
-        var command = DbConnection.CreateCommand();
-        command.CommandText = 
-            @"
-                SELECT 
-                    id 
+        return await DbConnection.ExecuteScalarAsync<string>(
+            @"SELECT 
+                    school 
                 FROM 
                     SchoolRounds
                 WHERE
-                    school = @school COLLATE NOCASE
+                    school = @School COLLATE NOCASE
                   AND 
-                    round = @round
-            ";
-        command.Parameters.AddWithValue("school", school);
-        command.Parameters.AddWithValue("round", round);
-
-        return await command.ExecuteScalarAsync() != null;
+                    round = @Round
+                ", new {School = school, Round = round}) != null;
     }
     
     /// <summary>
@@ -89,27 +68,22 @@ public class RosterRepository
     /// <param name="school">the school to remove from</param>
     /// <param name="round">the round to remove from</param>
     /// <returns>the number of fencers removed</returns>
-    public async Task<int> RemoveFencersForRound(string school, int round)
+    public async Task RemoveFencersForRound(string school, int round)
     {
-        var command = DbConnection.CreateCommand();
-        command.CommandText = 
+        await DbConnection.ExecuteAsync(
             @"
-                DELETE FROM 
-                    FencerRounds 
-                WHERE
-                    round = @round AND fencer_id IN (
-                        SELECT
-                            id
-                        FROM 
-                            Fencers
-                        WHERE
-                            school = @school COLLATE NOCASE
-                    ) 
-            ";
-        command.Parameters.AddWithValue("school", school);
-        command.Parameters.AddWithValue("round", round);
-
-        return await command.ExecuteNonQueryAsync();
+                    DELETE FROM 
+                        FencerRounds 
+                    WHERE
+                        round = @Round AND fencer_id IN (
+                            SELECT
+                                id
+                            FROM 
+                                Fencers
+                            WHERE
+                                school = @School COLLATE NOCASE
+                            )
+                ", new {School = school, Round = round});
     } 
     
     /// <summary>
@@ -117,30 +91,15 @@ public class RosterRepository
     /// </summary>
     /// <param name="id">id of the fencer to add</param>
     /// <param name="round">round to add</param>
-    /// <returns>true if no exceptions were encountered, false if there were</returns>
-    public async Task<bool> AddFencerRound(int id, int round)
+    public async Task AddFencerRound(int id, int round)
     {
-        var command = DbConnection.CreateCommand();
-        command.CommandText = 
+        await DbConnection.ExecuteAsync(
             @"
-                INSERT INTO FencerRounds 
-                    (round, fencer_id) 
-                VALUES 
-                    (@round, @id)
-            ";
-        command.Parameters.AddWithValue("round", round);
-        command.Parameters.AddWithValue("id", id);
-
-        try
-        {
-            await command.ExecuteNonQueryAsync();
-        }
-        catch (DbException e)
-        {
-            return false;
-        }
-
-        return true;
+                    INSERT INTO FencerRounds 
+                        (round, fencer_id) 
+                    VALUES 
+                        (@Round, @Id)
+                ", new {Round = round, Id = id});
     } 
     
     /// <summary>
@@ -153,21 +112,14 @@ public class RosterRepository
     /// <returns>the id of the newly created fencer</returns>
     public async Task<int> CreateNewFencer(string firstname, string lastname, string school, string gender)
     {
-        var command = DbConnection.CreateCommand();
-        command.CommandText = 
+        return await DbConnection.ExecuteScalarAsync<int>(
             @"
-                INSERT INTO Fencers
-                    (firstname, lastname, school, gender, tournaments_attended, points)                
-                VALUES
-                    (@firstname, @lastname, @school, @gender, 0, 0);
-                SELECT last_insert_rowid();
-            ";
-        command.Parameters.AddWithValue("firstname", firstname);
-        command.Parameters.AddWithValue("lastname", lastname);
-        command.Parameters.AddWithValue("school", school);
-        command.Parameters.AddWithValue("gender", gender);
-        
-        return Convert.ToInt32(await command.ExecuteScalarAsync());
+                    INSERT INTO Fencers
+                        (firstname, lastname, school, gender, tournaments_attended, points)                
+                    VALUES
+                        (@Firstname, @Lastname, @School, @Gender, 0, 0);
+                    SELECT last_insert_rowid();
+                ", new {Firstname = firstname, Lastname = lastname, School = school, Gender = gender});
     }
     
     /// <summary>
@@ -180,26 +132,19 @@ public class RosterRepository
     /// TODO check to see what happens if the fencer does not exist
     public async Task<int> CheckFencerExists(string firstname, string lastname, string school)
     {
-        var command = DbConnection.CreateCommand();
-        command.CommandText = 
+        return await DbConnection.ExecuteScalarAsync<int>(
             @"
-                SELECT 
-                    id
-                FROM
-                    Fencers
-                WHERE
-                    firstname = @firstname COLLATE NOCASE 
-                  AND 
-                      lastname = @lastname COLLATE NOCASE 
-                  AND 
-                      school = @school COLLATE NOCASE
-            ";
-        command.Parameters.AddWithValue("lastname", lastname);
-        command.Parameters.AddWithValue("firstname", firstname);
-        command.Parameters.AddWithValue("school", school);
-
-        int id = Convert.ToInt32(await command.ExecuteScalarAsync());
-        return id;
+                    SELECT 
+                        id
+                    FROM
+                        Fencers
+                    WHERE
+                        firstname = @Firstname COLLATE NOCASE 
+                      AND 
+                          lastname = @Lastname COLLATE NOCASE 
+                      AND 
+                          school = @School COLLATE NOCASE
+                ", new {Firstname = firstname, Lastname = lastname, School = school});
     }
     
     /// <summary>
@@ -209,19 +154,15 @@ public class RosterRepository
     /// <returns>true if the school was found, false if not</returns>
     public async Task<bool> CheckSchoolExists(string school)
     {
-        var command = DbConnection.CreateCommand();
-        command.CommandText = 
+        return await DbConnection.ExecuteScalarAsync<string>(
             @"
-                SELECT 
-                    school
-                FROM
-                    Schools
-                WHERE
-                    school = @school COLLATE NOCASE
-            ";
-        command.Parameters.AddWithValue("school", school);
-        
-        return await command.ExecuteScalarAsync() != null;
+                    SELECT 
+                        school
+                    FROM
+                        Schools
+                    WHERE
+                        school = @School COLLATE NOCASE
+                ", new {School = school}) != null;
     }
     
     /// <summary>
@@ -272,14 +213,12 @@ public class RosterRepository
     /// <param name="school">the school to update</param>
     /// <param name="round">the round to update</param>
     /// <returns>true if there were no exceptions, false if not</returns>
-    private async Task<bool> UpdateSchoolRound(string school, int round, char gender)
+    private async Task UpdateSchoolRound(string school, int round, char gender)
     {
         if (await SchoolHasSubmittedForRound(school, round))
-        {
             await RemoveFencersForRound(school, round);
-        }
 
-        return await AddRoundForSchool(school, round, gender);
+        await AddRoundForSchool(school, round, gender);
     }
     
     /// <summary>
@@ -323,12 +262,7 @@ public class RosterRepository
                 await f.CopyToAsync(fs);
             }
 
-            if (!await UpdateSchoolRound(school, round, gender))
-            {
-                pr.Message = $"Error";
-                pr.Success = false;
-                return pr;
-            }
+            await UpdateSchoolRound(school, round, gender);
 
             pr.NewFencers = await ReadRosterFile(f.FileName, school, gender.ToString(), round);
         }
