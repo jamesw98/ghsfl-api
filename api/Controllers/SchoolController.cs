@@ -18,8 +18,8 @@ public class SchoolController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
     [Route("api/{school}/fencers/{round}")]
+    [Authorize]
     public async Task<IActionResult> GetFencers(string school, int round)
     {
         string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;

@@ -15,23 +15,11 @@ public class RosterController : ControllerBase
     {
         repo = new RosterRepository();
     }
-
-    public class PostRequest
-    {
-        public string School { get; set; }
-    }
-    
-    // [HttpGet]
-    // [Route("api/roster")]
-    // public IActionResult Get(int round)
-    // {
-    //     return Ok(round);
-    // }
     
     [HttpPost]
     [Route("api/roster")]
     [Authorize]
-    public async Task<IActionResult> Post()
+    public async Task<IActionResult> PostRosterFile()
     {
         string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
         

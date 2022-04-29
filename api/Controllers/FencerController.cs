@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using api.Models;
 using api.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace api.Controllers;
@@ -17,21 +18,12 @@ public class FencerController : ControllerBase
 
     [HttpGet]
     [Route("api/fencer")]
-    public async Task<IActionResult> Get(string first, string last, string school)
+    [Authorize]
+    public async Task<IActionResult> GetFencer(string first, string last)
     {
-        //TODO get rid of this old auth, switch to new auth
-        if (!Request.Headers.ContainsKey("Authorization"))
-            return Unauthorized();
+        string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
         
-        var handler = new JwtSecurityTokenHandler();
-        var rawJwt = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        JwtSecurityToken jwt = handler.ReadJwtToken(rawJwt);
-        string requestClaim = jwt.Claims.Last(claim => claim.Type == "Groups").Value;
-        
-        if (school.ToLower() != requestClaim && !requestClaim.Equals("admin"))
-            return Unauthorized();
-
-        List<Fencer> result = await repo.GetFencersFromDB(first, last, school);
+        List<Fencer> result = await repo.GetFencersFromDB(first, last, schoolClaim);
 
         if (result.Count == 0)
             return NotFound();
