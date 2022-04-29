@@ -21,12 +21,12 @@ public class RosterController : ControllerBase
         public string School { get; set; }
     }
     
-    [HttpGet]
-    [Route("api/roster")]
-    public IActionResult Get(int round)
-    {
-        return Ok(round);
-    }
+    // [HttpGet]
+    // [Route("api/roster")]
+    // public IActionResult Get(int round)
+    // {
+    //     return Ok(round);
+    // }
     
     [HttpPost]
     [Route("api/roster")]
