@@ -17,17 +17,32 @@ public class FencerController : ControllerBase
     }
 
     [HttpGet]
-    [Route("api/{school}/fencer")]
+    [Route("api/fencer/{school}")]
     [Authorize]
-    public async Task<IActionResult> GetFencersAllForSchool(string school)
+    public async Task<IActionResult> GetAllFencersForSchool(string school)
     {
-        string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
-
-        if (!school.Equals(schoolClaim))
-            return Unauthorized();
+        string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value.ToLower();
         
-        // List<Fencer>
-        return Ok();
+        if (!school.Equals(schoolClaim) && !schoolClaim.Equals("admin"))
+            return Unauthorized();
+
+        List<Fencer> result = await repo.GetAllFencersForSchool(schoolClaim);
+        return Ok(result);
+    }
+    
+    [HttpGet]
+    [Route("api/fencer/{school}/{round}")]
+    [Authorize]
+    public async Task<IActionResult> GetFencersForRound(string school, int round)
+    {
+        string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value.ToLower();
+        
+        if (!school.Equals(schoolClaim) && !schoolClaim.Equals("admin"))
+            return Unauthorized();
+
+        List<Fencer> result = await repo.GetFencersForSchoolForRound(schoolClaim, round);
+
+        return result.Count == 0 ? NotFound($"No fencers were found for: {schoolClaim} round {round}") : Ok(result); 
     }
 
     [HttpGet]
