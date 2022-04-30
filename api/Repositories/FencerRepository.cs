@@ -13,7 +13,47 @@ public class FencerRepository
         DbConnection = new SqliteConnection("Data source=ghsfl_dev.db");
         DbConnection.Open();    
     }
+
+    public async Task<List<Fencer>> GetAllFencersForSchool(string school)
+    {
+        return (await DbConnection.QueryAsync<Fencer>(
+            @"
+                    SELECT
+                        firstname, 
+                        lastname, 
+                        school,
+                        tournaments_attended 'TournamentsAttended',
+                        points
+                    FROM
+                        fencers
+                    WHERE
+                        school = @School COLLATE NOCASE
+                ", new {School = school})).ToList();
+    }
     
+    /// <summary>
+    /// returns all fencers for a specific school for a specific round
+    /// </summary>
+    /// <param name="schoolName">the name of the school to get the fencers for</param>
+    /// <param name="round">the round to get the fencers for</param>
+    /// <returns>a list of fencers</returns>
+    public async Task<List<Fencer>> GetFencersForSchoolForRound(string schoolName, int round)
+    {
+        return (await DbConnection.QueryAsync<Fencer>(
+            @"
+                SELECT 
+                    f.firstname,
+                    f.lastname,
+                    f.school,
+                    f.gender
+                FROM FencerRounds fr
+                    INNER JOIN Fencers f ON fr.fencer_id = f.id
+                WHERE
+                    fr.round = @Round AND 
+                    f.school = @School COLLATE NOCASE
+            ", new {Round = round, School = schoolName})).ToList();
+    }
+
     /// <summary>
     /// gets a list of fencers from the database that match the given parameters
     /// </summary>
