@@ -15,29 +15,6 @@ public class SchoolRepository
     }
     
     /// <summary>
-    /// returns all fencers for a specific school for a specific round
-    /// </summary>
-    /// <param name="schoolName">the name of the school to get the fencers for</param>
-    /// <param name="round">the round to get the fencers for</param>
-    /// <returns>a list of fencers</returns>
-    public async Task<List<Fencer>> GetFencersForSchoolForRound(string schoolName, int round)
-    {
-        return (await DbConnection.QueryAsync<Fencer>(
-            @"
-                SELECT 
-                    f.firstname,
-                    f.lastname,
-                    f.school,
-                    f.gender
-                FROM FencerRounds fr
-                    INNER JOIN Fencers f ON fr.fencer_id = f.id
-                WHERE
-                    fr.round = @Round AND 
-                    f.school = @School COLLATE NOCASE
-            ", new {Round = round, School = schoolName})).ToList();
-        }
-    
-    /// <summary>
     /// returns all fencers that have been submitted in a roster for the given school
     /// </summary>
     /// <param name="schoolName">the name of the school to get the fencers for</param>
