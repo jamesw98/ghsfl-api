@@ -21,9 +21,9 @@ public class FencerRepository
     /// <param name="lastname">the lastname to search for</param>
     /// <param name="school">the school to search for</param>
     /// <returns></returns>
-    public async Task<List<Fencer>> GetFencersFromDB(string firstname, string lastname, string school)
+    public async Task<Fencer> GetFencerFromDb(string firstname, string lastname, string school)
     {
-         return (await DbConnection.QueryAsync<Fencer>(
+         return await DbConnection.ExecuteScalarAsync<Fencer>(
         @"
                 SELECT
                     firstname, lastname, school, tournaments_attended
@@ -35,6 +35,6 @@ public class FencerRepository
                     lastname = @Last COLLATE NOCASE
                   and
                     school = @School COLLATE NOCASE
-            ", new {First = firstname, Last = lastname, School = school})).ToList();
+            ", new {First = firstname, Last = lastname, School = school});
     }
 }

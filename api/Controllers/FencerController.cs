@@ -17,17 +17,28 @@ public class FencerController : ControllerBase
     }
 
     [HttpGet]
+    [Route("api/{school}/fencer")]
+    [Authorize]
+    public async Task<IActionResult> GetFencersAllForSchool(string school)
+    {
+        string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
+
+        if (!school.Equals(schoolClaim))
+            return Unauthorized();
+        
+        // List<Fencer>
+        return Ok();
+    }
+
+    [HttpGet]
     [Route("api/fencer")]
     [Authorize]
     public async Task<IActionResult> GetFencer(string first, string last)
     {
         string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
         
-        List<Fencer> result = await repo.GetFencersFromDB(first, last, schoolClaim);
+        Fencer result = await repo.GetFencerFromDb(first, last, schoolClaim);
 
-        if (result.Count == 0)
-            return NotFound();
-        
-        return Ok(result);
+        return result is not null ? Ok(result) : NotFound();
     }
 }
