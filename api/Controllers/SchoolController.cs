@@ -16,22 +16,15 @@ public class SchoolController : ControllerBase
     {
         repo = new SchoolRepository();
     }
-
+    
     [HttpGet]
-    [Route("api/{school}/fencers/{round}")]
+    [Route("api/{school}")]
     [Authorize]
-    public async Task<IActionResult> GetFencers(string school, int round)
+    public async Task<IActionResult> GetRounds(string school)
     {
+        //TODO
         string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
-        if (!school.ToLower().Equals(schoolClaim.ToLower()))
-            return Unauthorized();
-
-        List<Fencer> result = await repo.GetFencersForSchoolForRound(schoolClaim, round);
-        
-        if (result.Count == 0)
-            return NotFound($"No fencers were found for: {schoolClaim}");
-        
-        return Ok(result);
+        return Ok();
     }
 }
 
