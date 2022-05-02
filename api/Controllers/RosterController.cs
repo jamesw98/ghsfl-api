@@ -16,14 +16,31 @@ public class RosterController : ControllerBase
         repo = new RosterRepository();
     }
     
+    /// <summary>
+    /// returns the status of rosters for the school
+    /// </summary>
+    /// <returns>a list of roster statues</returns>
+    [HttpGet]
+    [Route("api/roster/{school}")]
+    // [Authorize]
+    public async Task<IActionResult> GetRostersForSchool(string school)
+    {
+        // string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value.ToLower();
+        //
+        // if (!school.Equals(schoolClaim) && !schoolClaim.Equals("admin"))
+        //     return Unauthorized();
+
+        return Ok(await repo.GetAllRostersStatus(school));
+    }
+
     [HttpPost]
     [Route("api/roster")]
-    [Authorize]
+    // [Authorize]
     public async Task<IActionResult> PostRosterFile()
     {
-        string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
+        // string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
         
-        RosterRepository.PostResponse result = await repo.ReadSubmittedFiles(schoolClaim, Request.Form.Files);
+        RosterRepository.PostResponse result = await repo.ReadSubmittedFiles("Centennial", Request.Form.Files);
         
         if (result.Success) 
             return Ok(result);
