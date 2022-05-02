@@ -9,11 +9,14 @@ namespace api.Repositories;
 public class RosterRepository
 {
     private SqliteConnection DbConnection;
+    private int[] _rounds;  
     
     public RosterRepository()
     {
         DbConnection = new SqliteConnection("Data source=ghsfl_dev.db");
         DbConnection.Open();
+        
+        _rounds = new[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
     }
 
     public class PostResponse
@@ -21,6 +24,50 @@ public class RosterRepository
         public bool Success { get; set; }
         public string Message { get; set; }
         public List<Fencer> NewFencers { get; set; }
+    }
+
+    public class RosterStatus
+    {
+        public int Round { get; set; }
+        public bool SubmittedMale { get; set; }
+        public bool SubmittedFemale { get; set; }
+    }
+    
+    /// <summary>
+    /// returns the submission status of every roster for a specified school 
+    /// </summary>
+    /// <param name="school">the school to query for</param>
+    /// <returns>a list of roster submission objects</returns>
+    public async Task<List<RosterStatus>> GetAllRostersStatus(string school)
+    {
+        List<RosterStatus> rosters = new List<RosterStatus>();
+        List<RosterStatus> rostersFromDb = (await DbConnection.QueryAsync<RosterStatus>(
+            @"
+                    SELECT
+                        round,
+                        male 'SubmittedMale',
+                        female 'SubmittedFemale'
+                    FROM
+                        SchoolRounds
+                    WHERE
+                        school = @School collate NOCASE
+                    ORDER BY round                                                 
+                ", new {School = school})).ToList();
+
+        foreach (int i in _rounds)
+        {
+            if (rostersFromDb.All(r => r.Round != i))
+                rosters.Add(new RosterStatus
+                {   
+                    Round = i,
+                    SubmittedFemale = false,
+                    SubmittedMale = false
+                });
+            else
+                rosters.Add(rostersFromDb.First(r => r.Round == i));
+        }
+
+        return rosters;
     }
     
     /// <summary>
@@ -33,13 +80,35 @@ public class RosterRepository
     {
         string genderColumn = gender is 'f' or 'F' ? "Female" : "Male";
 
-        await DbConnection.ExecuteAsync(
-            @$"
+        var hasSubmittedForRound = await DbConnection.QueryAsync<int>(
+            @"
+                    SELECT 
+                        round 
+                    FROM SchoolRounds 
+                    WHERE 
+                        school = @School AND round = @Round
+                ", new {School = school.ToLower(), Round = round});
+
+        if (!hasSubmittedForRound.Any())
+        {
+            await DbConnection.ExecuteAsync(
+                @$"
                     INSERT INTO SchoolRounds
                         (school, round, {genderColumn})
                     VALUES
                         (@School, @Round, @GenderVal)
+                ", new {School = school.ToLower(), Round = round, GenderVal = true});
+        }
+        else
+        {
+            await DbConnection.ExecuteAsync(
+                @$"
+                    UPDATE SchoolRounds
+                    SET {genderColumn} = @GenderVal
+                    WHERE 
+                        school = @School AND round = @Round
                 ", new {School = school, Round = round, GenderVal = true});
+        }
     }
     
     /// <summary>
