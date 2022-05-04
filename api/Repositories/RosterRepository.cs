@@ -86,9 +86,10 @@ public class RosterRepository
                         round 
                     FROM SchoolRounds 
                     WHERE 
-                        school = @School AND round = @Round
+                        school = @School COLLATE NOCASE AND 
+                        round = @Round
                 ", new {School = school.ToLower(), Round = round});
-
+        
         if (!hasSubmittedForRound.Any())
         {
             await DbConnection.ExecuteAsync(
@@ -106,7 +107,8 @@ public class RosterRepository
                     UPDATE SchoolRounds
                     SET {genderColumn} = @GenderVal
                     WHERE 
-                        school = @School AND round = @Round
+                        school = @School COLLATE NOCASE AND 
+                        round = @Round
                 ", new {School = school, Round = round, GenderVal = true});
         }
     }
@@ -298,7 +300,7 @@ public class RosterRepository
     /// <param name="files">the list of files that were uploaded</param>
     /// <returns>a PostResponse object that contains whether or not the action was a success, a message, and a list of
     /// fencers that were not already in the database</returns>
-    public async Task<PostResponse> ReadSubmittedFiles(string school, IFormFileCollection files)
+    public async Task<PostResponse> ReadSubmittedFiles(string school, IFormFileCollection files, int round)
     {
         PostResponse pr = new PostResponse();
         pr.NewFencers = new List<Fencer>();
@@ -315,7 +317,6 @@ public class RosterRepository
                 return pr;
             }
             
-            int round = Convert.ToInt32(matches.Groups[1].Value);
             char gender = matches.Groups[3].Value.ToLower()[0];
 
             if (!await CheckSchoolExists(school))
