@@ -31,16 +31,16 @@ public class FencerController : ControllerBase
     }
     
     [HttpGet]
-    [Route("api/fencer/{school}/{round}")]
+    [Route("api/fencer/{school}/{round}/{gender}")]
     [Authorize]
-    public async Task<IActionResult> GetFencersForRound(string school, int round)
+    public async Task<IActionResult> GetFencersForRound(string school, int round, string gender)
     {
-        string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value.ToLower();
+        string schoolClaim = HttpContext.User.Identities.First().Claims.Last().Value;
         
         if (!school.Equals(schoolClaim) && !schoolClaim.Equals("admin"))
             return Unauthorized();
 
-        List<Fencer> result = await repo.GetFencersForSchoolForRound(schoolClaim, round);
+        List<Fencer> result = await repo.GetFencersForSchoolForRoundForGender(schoolClaim, round, gender);
 
         return result.Count == 0 ? NotFound($"No fencers were found for: {schoolClaim} round {round}") : Ok(result); 
     }
