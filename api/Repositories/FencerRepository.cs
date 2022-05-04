@@ -37,7 +37,7 @@ public class FencerRepository
     /// <param name="schoolName">the name of the school to get the fencers for</param>
     /// <param name="round">the round to get the fencers for</param>
     /// <returns>a list of fencers</returns>
-    public async Task<List<Fencer>> GetFencersForSchoolForRound(string schoolName, int round)
+    public async Task<List<Fencer>> GetFencersForSchoolForRoundForGender(string schoolName, int round, string gender)
     {
         return (await DbConnection.QueryAsync<Fencer>(
             @"
@@ -50,8 +50,9 @@ public class FencerRepository
                     INNER JOIN Fencers f ON fr.fencer_id = f.id
                 WHERE
                     fr.round = @Round AND 
-                    f.school = @School COLLATE NOCASE
-            ", new {Round = round, School = schoolName})).ToList();
+                    f.school = @School COLLATE NOCASE AND
+                    f.gender = @Gender
+            ", new {Round = round, School = schoolName, Gender = gender})).ToList();
     }
 
     /// <summary>
