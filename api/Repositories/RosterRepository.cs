@@ -119,18 +119,21 @@ public class RosterRepository
     /// <param name="school">the school to check</param>
     /// <param name="round">the round to check</param>
     /// <returns>true if they have, false if they haven't</returns>
-    public async Task<bool> SchoolHasSubmittedForRound(string school, int round)
+    public async Task<RosterStatus> SchoolHasSubmittedForRound(string school, int round)
     {
-        return await DbConnection.ExecuteScalarAsync<string>(
+        var result = await DbConnection.QueryAsync<RosterStatus>(
             @"SELECT 
-                    school 
+                    round, 
+                    male 'SubmittedMale', 
+                    female 'SubmittedFemale' 
                 FROM 
                     SchoolRounds
                 WHERE
                     school = @School COLLATE NOCASE
                   AND 
                     round = @Round
-                ", new {School = school, Round = round}) != null;
+                ", new {School = school, Round = round});
+        return result?.First();
     }
     
     /// <summary>
@@ -139,7 +142,7 @@ public class RosterRepository
     /// <param name="school">the school to remove from</param>
     /// <param name="round">the round to remove from</param>
     /// <returns>the number of fencers removed</returns>
-    public async Task RemoveFencersForRound(string school, int round)
+    public async Task RemoveFencersForRound(string school, int round, char gender)
     {
         await DbConnection.ExecuteAsync(
             @"
@@ -152,9 +155,10 @@ public class RosterRepository
                             FROM 
                                 Fencers
                             WHERE
-                                school = @School COLLATE NOCASE
+                                school = @School COLLATE NOCASE AND
+                                gender = @Gender
                             )
-                ", new {School = school, Round = round});
+                ", new {School = school, Round = round, Gender = gender});
     } 
     
     /// <summary>
@@ -286,8 +290,13 @@ public class RosterRepository
     /// <returns>true if there were no exceptions, false if not</returns>
     private async Task UpdateSchoolRound(string school, int round, char gender)
     {
-        if (await SchoolHasSubmittedForRound(school, round))
-            await RemoveFencersForRound(school, round);
+        RosterStatus status = await SchoolHasSubmittedForRound(school, round);
+
+        if (status != null)
+        {
+            if (gender is 'f' or 'F' && status.SubmittedFemale || gender is 'm' or 'M' && status.SubmittedMale)
+                await RemoveFencersForRound(school, round, gender);    
+        }
 
         await AddRoundForSchool(school, round, gender);
     }
