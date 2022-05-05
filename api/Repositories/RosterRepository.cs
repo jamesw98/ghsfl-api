@@ -1,4 +1,3 @@
-using System.Data.Common;
 using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
 using api.Models;
@@ -8,12 +7,17 @@ namespace api.Repositories;
 
 public class RosterRepository
 {
+    private IConfiguration _config;
     private SqliteConnection DbConnection;
-    private int[] _rounds;  
+    private int[] _rounds;
     
-    public RosterRepository()
+    public RosterRepository(IConfiguration config)
     {
-        DbConnection = new SqliteConnection("Data source=ghsfl_dev.db");
+        _config = config;
+
+        var connectionString = _config.GetValue<string>("DbConnection");
+        
+        DbConnection = new SqliteConnection($"Data source={connectionString}");
         DbConnection.Open();
         
         _rounds = new[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -133,7 +137,7 @@ public class RosterRepository
                   AND 
                     round = @Round
                 ", new {School = school, Round = round});
-        return result?.First();
+        return result.Count() != 0 ? result.First() : null;
     }
     
     /// <summary>
