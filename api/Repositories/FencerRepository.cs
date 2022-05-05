@@ -7,10 +7,15 @@ namespace api.Repositories;
 public class FencerRepository
 {
     private readonly SqliteConnection DbConnection;
+    private IConfiguration _config;
     
-    public FencerRepository()
+    public FencerRepository(IConfiguration config)
     {
-        DbConnection = new SqliteConnection("Data source=ghsfl_dev.db");
+        _config = config;
+        
+        var connectionString = _config.GetValue<string>("DbConnection");
+        
+        DbConnection = new SqliteConnection($"Data source={connectionString}");
         DbConnection.Open();    
     }
 
