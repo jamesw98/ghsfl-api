@@ -7,10 +7,15 @@ namespace api.Repositories;
 public class SchoolRepository
 {
     private SqliteConnection DbConnection;
+    private IConfiguration _config;
 
-    public SchoolRepository()
+    public SchoolRepository(IConfiguration config)
     {
-        DbConnection = new SqliteConnection("Data source=ghsfl_dev.db");
+        _config = config;
+        
+        var connectionString = _config.GetValue<string>("DbConnection");
+        
+        DbConnection = new SqliteConnection($"Data source={connectionString}");
         DbConnection.Open();
     }
     
