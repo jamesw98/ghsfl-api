@@ -10,10 +10,12 @@ namespace api.Controllers;
 public class FencerController : ControllerBase
 {
     private FencerRepository repo;
+    private IConfiguration _config;
     
-    public FencerController()
+    public FencerController(IConfiguration config)
     {
-        repo = new FencerRepository();
+        _config = config;
+        repo = new FencerRepository(_config);
     }
 
     [HttpGet]
@@ -42,7 +44,7 @@ public class FencerController : ControllerBase
 
         List<Fencer> result = await repo.GetFencersForSchoolForRoundForGender(schoolClaim, round, gender);
 
-        return result.Count == 0 ? NotFound($"No fencers were found for: {schoolClaim} round {round}") : Ok(result); 
+        return Ok(result); 
     }
 
     [HttpGet]
