@@ -10,10 +10,12 @@ namespace api.Controllers;
 public class RosterController : ControllerBase
 {
     private RosterRepository repo;
+    private IConfiguration _config;
     
-    public RosterController()
+    public RosterController(IConfiguration config)
     {
-        repo = new RosterRepository();
+        _config = config;
+        repo = new RosterRepository(_config);
     }
     
     /// <summary>

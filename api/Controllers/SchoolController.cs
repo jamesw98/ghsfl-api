@@ -11,10 +11,12 @@ namespace api.Controllers;
 public class SchoolController : ControllerBase
 {
     private SchoolRepository repo;
+    private IConfiguration _config;
 
-    public SchoolController()
+    public SchoolController(IConfiguration config)
     {
-        repo = new SchoolRepository();
+        _config = config;
+        repo = new SchoolRepository(_config);
     }
     
     [HttpGet]
