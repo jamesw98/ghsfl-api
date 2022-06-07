@@ -264,14 +264,14 @@ public class RosterRepository
                 string line = await read.ReadLineAsync();
                 string[] values = line.Split(",");
                 
-                string last = values[0];
-                string first = values[1];
+                string first = values[0];
+                string last = values[1];
 
-                int fencerId = await CheckFencerExists(last, first, school); 
+                int fencerId = await CheckFencerExists(first, last, school); 
                 
                 if (fencerId == 0)
                 {
-                    fencerId = await CreateNewFencer(last, first, school, gender);
+                    fencerId = await CreateNewFencer(first, last, school, gender);
                     result.Add(new Fencer
                     {
                         FirstName = first, 
